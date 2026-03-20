@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>리즈</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --pink:       #FFB6C1;
+      --pink-light: #FFE4EC;
+      --pink-mid:   #FFCCD5;
+      --rose:       #FF6B8A;
+      --rose-dark:  #E05070;
+      --bg:         #FFF5F8;
+      --card:       #FFFFFF;
+      --text:       #5C3D4E;
+      --text-sub:   #9B7A87;
+      --text-muted: #C4A4B0;
+      --border:     #FFD6DC;
+      --shadow:     0 3px 14px rgba(255, 100, 130, 0.10);
+      --r:          16px;
+      --r-sm:       10px;
+      --nav-h:      64px;
+    }
+
+    ::-webkit-scrollbar { display: none; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── BOTTOM NAV ── */
+    .nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; height: var(--nav-h);
+      background: #fff; border-top: 1.5px solid var(--border);
+      display: flex; z-index: 100;
+      box-shadow: 0 -3px 16px rgba(255,100,130,.08);
+    }
+    .nav-btn {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 3px;
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); font-size: 11px; font-weight: 500;
+      transition: color .2s;
+    }
+    .nav-btn .ni { font-size: 22px; }
+    .nav-btn.active { color: var(--rose); }
+
+    /* ── PAGES ── */
+    .page { display: none; padding-bottom: calc(var(--nav-h) + 20px); }
+    .page.active { display: block; }
+
+    /* ── STICKY HEADER (Tab1) ── */
+    .sticky-top {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--bg); padding: 14px 14px 0;
+    }
+
+    .slogan {
+      text-align: center; font-size: 17px; font-weight: 800;
+      color: var(--rose); letter-spacing: -0.3px; padding: 10px 0 8px;
+    }
+
+    /* Weight cards */
+    .weight-row { display: flex; gap: 10px; margin-bottom: 8px; }
+    .w-card {
+      flex: 1; background: var(--card); border-radius: var(--r-sm);
+      padding: 12px 10px; text-align: center;
+      border: 1.5px solid var(--border); box-shadow: var(--shadow);
+    }
+    .w-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .w-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .w-value small { font-size: 13px; font-weight: 400; color: var(--text-sub); }
+    .w-edit-btn {
+      margin-top: 5px; background: var(--pink-light);
+      border: none; border-radius: 6px; padding: 3px 10px;
+      font-size: 11px; color: var(--rose); cursor: pointer; font-weight: 500;
+    }
+    .w-input-wrap { margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .w-input-wrap input {
+      width: 72px; padding: 5px 8px; border: 1.5px solid var(--pink);
+      border-radius: 8px; font-size: 16px; text-align: center; color: var(--text); background: var(--bg);
+      outline: none;
+    }
+    .w-input-wrap button {
+      padding: 5px 10px; border: none; border-radius: 8px;
+      background: var(--rose); color: #fff; font-size: 12px; cursor: pointer; font-weight: 600;
+    }
+
+    /* ── CALENDAR ── */
+    .cal-wrap { padding: 0 14px 6px; background: var(--bg); }
+    .cal-nav {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+    }
+    .cal-nav .month { font-size: 12px; font-weight: 600; color: var(--text-sub); }
+    .cal-arrow {
+      background: none; border: none; font-size: 20px; color: var(--text-sub);
+      cursor: pointer; padding: 2px 8px; line-height: 1;
+    }
+    .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .day-cell {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 5px 2px; border-radius: var(--r-sm); cursor: pointer;
+      background: var(--card); border: 1.5px solid transparent; transition: all .18s;
+    }
+    .day-cell .dn { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+    .day-cell .dd { font-size: 15px; font-weight: 600; color: var(--text); }
+    .day-cell.today { background: var(--pink-light); border-color: var(--pink); }
+    .day-cell.today .dd { color: var(--rose); }
+    .day-cell.selected { background: var(--rose); border-color: var(--rose); }
+    .day-cell.selected .dn, .day-cell.selected .dd { color: #fff; }
+
+    /* ── CONTENT ── */
+    .content { padding: 10px 14px; }
+    .date-label { text-align: center; font-size: 12px; color: var(--text-muted); padding: 2px 0 10px; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card); border-radius: var(--r);
+      padding: 16px; margin-bottom: 12px;
+      border: 1.5px solid var(--border); box-shadow: var(--shadow);
+    }
+    .card-head {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+    }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .card-title .ci { font-size: 16px; }
+
+    /* Tags */
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .tag {
+      background: var(--pink-light); color: var(--rose); border-radius: 20px;
+      padding: 5px 12px; font-size: 12px; font-weight: 500;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .tag .x { cursor: pointer; font-size: 15px; line-height: 1; }
+
+    /* Add row */
+    .add-row { display: flex; gap: 8px; }
+    .add-row input, .add-row textarea {
+      flex: 1; padding: 9px 12px; border: 1.5px solid var(--border);
+      border-radius: var(--r-sm); font-size: 13px; color: var(--text);
+      background: var(--bg); outline: none; font-family: inherit;
+    }
+    .add-row input:focus, .add-row textarea:focus { border-color: var(--pink); }
+    .add-row .add-btn {
+      background: var(--pink); border: none; border-radius: var(--r-sm);
+      padding: 9px 14px; font-size: 13px; color: #fff; cursor: pointer; font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Textarea */
+    .text-area {
+      width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+      border-radius: var(--r-sm); font-size: 13px; color: var(--text);
+      background: var(--bg); outline: none; resize: none; min-height: 72px;
+      font-family: inherit;
+    }
+    .text-area:focus { border-color: var(--pink); }
+
+    /* Checklist */
+    .cl-section { margin-bottom: 8px; }
+    .cl-section-label {
+      font-size: 10px; font-weight: 700; color: var(--text-muted);
+      letter-spacing: 0.6px; text-transform: uppercase;
+      margin-bottom: 4px; padding-left: 2px;
+    }
+    .cl-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--pink-light);
+      cursor: pointer;
+    }
+    .cl-item:last-child { border-bottom: none; }
+    .cl-box {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid var(--pink); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; transition: all .18s;
+    }
+    .cl-item.on .cl-box { background: var(--rose); border-color: var(--rose); }
+    .cl-item.on .cl-box::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 800; }
+    .cl-text { font-size: 13px; color: var(--text); transition: color .18s; }
+    .cl-item.on .cl-text { color: var(--text-muted); text-decoration: line-through; }
+    .progress-badge {
+      font-size: 11px; color: var(--text-sub);
+      background: var(--pink-light); padding: 2px 9px; border-radius: 10px;
+    }
+
+    /* ── TAB 2 ── */
+    .t2-content { padding: 18px 14px; }
+
+    .routine-wrap { }
+    .edit-btn {
+      background: var(--pink-light); border: none; border-radius: var(--r-sm);
+      padding: 6px 12px; font-size: 12px; color: var(--rose); cursor: pointer; font-weight: 500;
+    }
+
+    /* Schedule */
+    .sched-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0; border-bottom: 1px solid var(--pink-light);
+    }
+    .sched-item:last-child { border-bottom: none; }
+    .sched-text { font-size: 13px; color: var(--text); }
+    .del-btn { background: none; border: none; font-size: 16px; color: var(--text-muted); cursor: pointer; }
+
+    /* Gratitude */
+    .grat-list { display: flex; flex-direction: column; gap: 8px; }
+    .grat-item { display: flex; align-items: center; gap: 10px; }
+    .grat-num {
+      width: 24px; height: 24px; background: var(--pink-light); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--rose); flex-shrink: 0;
+    }
+    .grat-input {
+      flex: 1; padding: 8px 12px; border: 1.5px solid var(--border);
+      border-radius: var(--r-sm); font-size: 13px; color: var(--text);
+      background: var(--bg); outline: none; font-family: inherit;
+    }
+    .grat-input:focus { border-color: var(--pink); }
+
+    .empty { text-align: center; font-size: 13px; color: var(--text-muted); padding: 14px 0; }
+
+    /* ── MODAL ── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(92,61,78,.35); z-index: 200;
+      align-items: flex-end; justify-content: center;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--card); border-radius: 24px 24px 0 0;
+      padding: 22px 18px 30px; width: 100%; max-width: 480px;
+      max-height: 82vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 18px; }
+    .modal-day-section { margin-bottom: 16px; }
+    .modal-day-label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .modal-item-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .modal-item-row input {
+      flex: 1; padding: 7px 10px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 13px; color: var(--text);
+      background: var(--bg); outline: none; font-family: inherit;
+    }
+    .modal-item-row input:focus { border-color: var(--pink); }
+    .modal-add-btn {
+      width: 100%; background: var(--pink-light); border: none; border-radius: 8px;
+      padding: 7px; font-size: 12px; color: var(--rose); cursor: pointer; margin-top: 2px;
+    }
+    .modal-save-btn {
+      width: 100%; padding: 14px; background: var(--rose); border: none;
+      border-radius: var(--r-sm); color: #fff; font-size: 15px;
+      font-weight: 700; cursor: pointer; margin-top: 18px;
+      box-shadow: 0 4px 14px rgba(255,107,138,.35);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ TAB 1: 식습관 ════════════════ -->
+<div id="page-diet" class="page active">
+
+  <div class="sticky-top">
+    <div class="slogan">🌸 20대에 리즈 찍자! 🌸</div>
+
+    <div class="weight-row">
+      <!-- 목표 몸무게 -->
+      <div class="w-card">
+        <div class="w-label">목표 몸무게</div>
+        <div id="gw-view">
+          <div class="w-value" id="gw-val">--<small>kg</small></div>
+          <button class="w-edit-btn" id="gw-btn" onclick="toggleGoalEdit()">설정</button>
+        </div>
+        <div id="gw-form" style="display:none">
+          <div class="w-input-wrap">
+            <input type="number" id="gw-input" placeholder="kg" step="0.1">
+            <button onclick="saveGoalWeight()">저장</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 현재 몸무게 -->
+      <div class="w-card">
+        <div class="w-label">현재 몸무게</div>
+        <div id="cw-view">
+          <div class="w-value" id="cw-val">--<small>kg</small></div>
+          <button class="w-edit-btn" onclick="toggleCurrentEdit()">입력</button>
+        </div>
+        <div id="cw-form" style="display:none">
+          <div class="w-input-wrap">
+            <input type="number" id="cw-input" placeholder="kg" step="0.1">
+            <button onclick="saveCurrentWeight()">저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 주별 달력 -->
+    <div class="cal-wrap">
+      <div class="cal-nav">
+        <button class="cal-arrow" onclick="prevWeek()">‹</button>
+        <div class="month" id="cal-month"></div>
+        <button class="cal-arrow" onclick="nextWeek()">›</button>
+      </div>
+      <div class="week-grid" id="week-grid"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="date-label" id="date-label"></div>
+
+    <!-- 1. 건강 음식 리스트 -->
+    <div class="card">
+      <div class="card-title"><span class="ci">🥗</span> 건강 음식 리스트</div>
+      <div class="tags" id="healthy-tags"></div>
+      <div class="add-row">
+        <input type="text" id="healthy-input" placeholder="음식 추가..." onkeydown="if(event.key==='Enter')addHealthy()">
+        <button class="add-btn" onclick="addHealthy()">추가</button>
+      </div>
+    </div>
+
+    <!-- 2. 오늘 먹을 음식 -->
+    <div class="card">
+      <div class="card-title"><span class="ci">🍽️</span> 오늘 먹을 음식</div>
+      <textarea class="text-area" id="today-food" placeholder="오늘 먹을 것들을 적어봐요..." oninput="saveTodayFood()"></textarea>
+    </div>
+
+    <!-- 3. 점심 체크리스트 -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="ci">☀️</span> 점심</div>
+        <div class="progress-badge" id="lunch-prog"></div>
+      </div>
+      <div id="lunch-cl"></div>
+    </div>
+
+    <!-- 4. 저녁 체크리스트 -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="ci">🌙</span> 저녁</div>
+        <div class="progress-badge" id="dinner-prog"></div>
+      </div>
+      <div id="dinner-cl"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 2: 뷰티&루틴 ════════════════ -->
+<div id="page-beauty" class="page">
+  <div class="t2-content">
+
+    <!-- 루틴 체크리스트 -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="ci">✨</span> 오늘의 루틴</div>
+        <button class="edit-btn" onclick="openRoutineModal()">설정</button>
+      </div>
+      <div id="routine-list"></div>
+    </div>
+
+    <!-- 오늘 일정 -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px"><span class="ci">📅</span> 오늘 일정</div>
+      <div id="sched-list"></div>
+      <div class="add-row">
+        <input type="text" id="sched-input" placeholder="일정 추가..." onkeydown="if(event.key==='Enter')addSched()">
+        <button class="add-btn" onclick="addSched()">추가</button>
+      </div>
+    </div>
+
+    <!-- 감사한 점 -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px"><span class="ci">🙏</span> 오늘 감사한 점</div>
+      <div class="grat-list">
+        <div class="grat-item">
+          <div class="grat-num">1</div>
+          <input class="grat-input" id="grat-1" type="text" placeholder="감사한 점을 적어봐요..." oninput="saveGrat()">
+        </div>
+        <div class="grat-item">
+          <div class="grat-num">2</div>
+          <input class="grat-input" id="grat-2" type="text" placeholder="감사한 점을 적어봐요..." oninput="saveGrat()">
+        </div>
+        <div class="grat-item">
+          <div class="grat-num">3</div>
+          <input class="grat-input" id="grat-3" type="text" placeholder="감사한 점을 적어봐요..." oninput="saveGrat()">
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════ BOTTOM NAV ════ -->
+<nav class="nav">
+  <button class="nav-btn active" id="nb-diet" onclick="switchTab('diet')">
+    <span class="ni">🥗</span><span>식습관</span>
+  </button>
+  <button class="nav-btn" id="nb-beauty" onclick="switchTab('beauty')">
+    <span class="ni">✨</span><span>뷰티&루틴</span>
+  </button>
+</nav>
+
+<!-- ════ ROUTINE MODAL ════ -->
+<div class="overlay" id="routine-overlay" onclick="overlayClose(event)">
+  <div class="modal">
+    <div class="modal-title">루틴 설정</div>
+    <div id="routine-modal-body"></div>
+    <button class="modal-save-btn" onclick="saveRoutines()">저장</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════
+
+const CHECKLIST = {
+  before: [
+    '물 한 컵 마시기',
+    '음식은 양이 아닌 맛을 음미한다는 사실 기억하기'
+  ],
+  during: [
+    '맛을 음미하며 꼭꼭 씹어먹기',
+    '내가 먹을 것만 미리 덜어두기',
+    '핸드폰 하지 말고 음식에만 집중하기'
+  ],
+  after: [
+    '식사를 마치면 바로 자리에서 일어나기',
+    '양치'
+  ],
+  common: [
+    '간식 먹지 말기 (안 먹으면 생각 안 남!)'
+  ]
+};
+const CL_LABELS = { before:'식사 전', during:'식사 중', after:'식사 후', common:'공통' };
+const CL_TOTAL  = Object.values(CHECKLIST).reduce((s,a)=>s+a.length,0);
+
+const DAY_KEYS   = ['sun','mon','tue','wed','thu','fri','sat'];
+const DAY_KO     = ['일','월','화','수','목','금','토'];
+const DEFAULT_ROUTINES = {
+  sun:[], mon:['트리트먼트 바르기'], tue:['헤어팩'],
+  wed:['트리트먼트 바르기'], thu:['헤어팩'],
+  fri:['트리트먼트 바르기'], sat:[]
+};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let weekOffset   = 0;
+let selectedDate = today();
+let tempRoutines = {};
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function today()      { return fmt(new Date()); }
+function fmt(d)       { return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; }
+function p2(n)        { return String(n).padStart(2,'0'); }
+function parse(s)     { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+
+function $get(k, def=null) {
+  try { const v=localStorage.getItem(k); return v!==null?JSON.parse(v):def; }
+  catch { return def; }
+}
+function $set(k,v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+function weekDates(off) {
+  const t  = new Date();
+  const d0 = new Date(t);
+  d0.setDate(t.getDate() - ((t.getDay()+6)%7) + off*7); // Monday start
+  return Array.from({length:7}, (_,i) => { const d=new Date(d0); d.setDate(d0.getDate()+i); return d; });
+}
+
+// ══════════════════════════════════════════
+// TAB
+// ══════════════════════════════════════════
+function switchTab(tab) {
+  ['diet','beauty'].forEach(t => {
+    document.getElementById(`page-${t}`).classList.toggle('active', t===tab);
+    document.getElementById(`nb-${t}`).classList.toggle('active', t===tab);
+  });
+  if (tab==='beauty') { renderRoutine(); renderSched(); renderGrat(); }
+}
+
+// ══════════════════════════════════════════
+// WEIGHT
+// ══════════════════════════════════════════
+function loadWeights() {
+  const goal = $get('liz_goal');
+  if (goal) {
+    document.getElementById('gw-val').innerHTML = `${goal}<small>kg</small>`;
+    document.getElementById('gw-btn').textContent = '수정';
+  }
+  const todayW = $get(`liz_w_${today()}`);
+  if (todayW) {
+    setCurrentDisplay(todayW);
+    document.getElementById('cw-input').value = todayW;
+  } else {
+    // find most recent
+    const keys = Object.keys(localStorage).filter(k=>k.startsWith('liz_w_')).sort().reverse();
+    if (keys.length) setCurrentDisplay($get(keys[0]));
+  }
+}
+
+function setCurrentDisplay(v) {
+  document.getElementById('cw-val').innerHTML = `${v}<small>kg</small>`;
+}
+
+function toggleGoalEdit() {
+  const on = document.getElementById('gw-form').style.display !== 'none';
+  document.getElementById('gw-view').style.display  = on ? '' : 'none';
+  document.getElementById('gw-form').style.display  = on ? 'none' : '';
+  if (!on) { document.getElementById('gw-input').value = $get('liz_goal')||''; document.getElementById('gw-input').focus(); }
+}
+function saveGoalWeight() {
+  const v = document.getElementById('gw-input').value.trim(); if (!v) return;
+  $set('liz_goal', v);
+  document.getElementById('gw-val').innerHTML = `${v}<small>kg</small>`;
+  document.getElementById('gw-btn').textContent = '수정';
+  document.getElementById('gw-form').style.display = 'none';
+  document.getElementById('gw-view').style.display = '';
+}
+
+function toggleCurrentEdit() {
+  const on = document.getElementById('cw-form').style.display !== 'none';
+  document.getElementById('cw-view').style.display = on ? '' : 'none';
+  document.getElementById('cw-form').style.display = on ? 'none' : '';
+  if (!on) document.getElementById('cw-input').focus();
+}
+function saveCurrentWeight() {
+  const v = document.getElementById('cw-input').value.trim(); if (!v) return;
+  $set(`liz_w_${today()}`, v);
+  setCurrentDisplay(v);
+  document.getElementById('cw-form').style.display = 'none';
+  document.getElementById('cw-view').style.display = '';
+}
+
+// ══════════════════════════════════════════
+// CALENDAR
+// ══════════════════════════════════════════
+function renderCal() {
+  const dates = weekDates(weekOffset);
+  const td    = today();
+
+  const months = [...new Set(dates.map(d=>d.getMonth()+1))];
+  document.getElementById('cal-month').textContent =
+    `${dates[0].getFullYear()}년 ${months.map(m=>m+'월').join(' - ')}`;
+
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+  dates.forEach(d => {
+    const s = fmt(d);
+    const cell = document.createElement('div');
+    cell.className = 'day-cell' + (s===td?' today':'') + (s===selectedDate?' selected':'');
+    const dow = (d.getDay()+6)%7; // 0=Mon
+    cell.innerHTML = `<span class="dn">${['월','화','수','목','금','토','일'][dow]}</span><span class="dd">${d.getDate()}</span>`;
+    cell.onclick = () => selectDate(s);
+    grid.appendChild(cell);
+  });
+}
+function selectDate(s) {
+  selectedDate = s;
+  renderCal();
+  renderDateLabel();
+  renderDiet();
+}
+function renderDateLabel() {
+  const t = today();
+  if (selectedDate === t) { document.getElementById('date-label').textContent = '오늘'; return; }
+  const d = parse(selectedDate);
+  document.getElementById('date-label').textContent =
+    `${d.getMonth()+1}월 ${d.getDate()}일 (${DAY_KO[d.getDay()]})`;
+}
+function prevWeek() { weekOffset--; renderCal(); }
+function nextWeek() { weekOffset++; renderCal(); }
+
+// ══════════════════════════════════════════
+// DIET
+// ══════════════════════════════════════════
+function renderDiet() {
+  renderHealthy();
+  renderTodayFood();
+  renderCL('lunch');
+  renderCL('dinner');
+}
+
+// Healthy foods
+function renderHealthy() {
+  const foods = $get('liz_healthy', []);
+  const box   = document.getElementById('healthy-tags');
+  box.innerHTML = foods.map((f,i) =>
+    `<div class="tag">${f}<span class="x" onclick="delHealthy(${i})">×</span></div>`
+  ).join('');
+}
+function addHealthy() {
+  const el = document.getElementById('healthy-input');
+  const v  = el.value.trim(); if (!v) return;
+  const a  = $get('liz_healthy', []); a.push(v); $set('liz_healthy', a);
+  el.value = ''; renderHealthy();
+}
+function delHealthy(i) {
+  const a = $get('liz_healthy', []); a.splice(i,1); $set('liz_healthy', a); renderHealthy();
+}
+
+// Today food
+function renderTodayFood() {
+  document.getElementById('today-food').value = $get(`liz_food_${selectedDate}`, '');
+}
+function saveTodayFood() {
+  $set(`liz_food_${selectedDate}`, document.getElementById('today-food').value);
+}
+
+// Checklist
+function renderCL(meal) {
+  const checks = $get(`liz_cl_${selectedDate}`, {});
+  const box    = document.getElementById(`${meal}-cl`);
+  box.innerHTML = '';
+  let done = 0;
+
+  Object.entries(CHECKLIST).forEach(([sec, items]) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'cl-section';
+    const lbl = document.createElement('div');
+    lbl.className = 'cl-section-label';
+    lbl.textContent = CL_LABELS[sec];
+    wrap.appendChild(lbl);
+
+    items.forEach(item => {
+      const key   = `${meal}|${sec}|${item}`;
+      const on    = checks[key] || false;
+      if (on) done++;
+      const row = document.createElement('div');
+      row.className = `cl-item${on?' on':''}`;
+      row.innerHTML = `<div class="cl-box"></div><div class="cl-text">${item}</div>`;
+      row.onclick = () => {
+        const c = $get(`liz_cl_${selectedDate}`, {});
+        c[key] = !c[key]; $set(`liz_cl_${selectedDate}`, c);
+        row.classList.toggle('on');
+        refreshProgress(meal);
+      };
+      wrap.appendChild(row);
+    });
+    box.appendChild(wrap);
+  });
+  document.getElementById(`${meal}-prog`).textContent = `${done} / ${CL_TOTAL}`;
+}
+
+function refreshProgress(meal) {
+  const checks = $get(`liz_cl_${selectedDate}`, {});
+  let done = 0;
+  Object.entries(CHECKLIST).forEach(([sec,items]) =>
+    items.forEach(item => { if (checks[`${meal}|${sec}|${item}`]) done++; })
+  );
+  document.getElementById(`${meal}-prog`).textContent = `${done} / ${CL_TOTAL}`;
+}
+
+// ══════════════════════════════════════════
+// BEAUTY & ROUTINE
+// ══════════════════════════════════════════
+function todayDayKey() { return DAY_KEYS[new Date().getDay()]; }
+
+function getRoutine(dk) { return $get(`liz_rt_${dk}`, DEFAULT_ROUTINES[dk] || []); }
+
+function renderRoutine() {
+  const dk     = todayDayKey();
+  const items  = getRoutine(dk);
+  const td     = today();
+  const checks = $get(`liz_rtc_${td}`, {});
+  const box    = document.getElementById('routine-list');
+  box.innerHTML = '';
+
+  if (!items.length) { box.innerHTML = '<div class="empty">오늘은 루틴이 없어요 🌸</div>'; return; }
+
+  items.forEach((item, i) => {
+    const on  = checks[i] || false;
+    const row = document.createElement('div');
+    row.className = `cl-item${on?' on':''}`;
+    row.innerHTML = `<div class="cl-box"></div><div class="cl-text">${item}</div>`;
+    row.onclick = () => {
+      const c = $get(`liz_rtc_${td}`, {});
+      c[i] = !c[i]; $set(`liz_rtc_${td}`, c);
+      row.classList.toggle('on');
+    };
+    box.appendChild(row);
+  });
+}
+
+// Schedule
+function renderSched() {
+  const items = $get(`liz_sched_${today()}`, []);
+  const box   = document.getElementById('sched-list');
+  if (!items.length) { box.innerHTML = '<div class="empty">일정이 없어요</div>'; return; }
+  box.innerHTML = items.map((t,i) =>
+    `<div class="sched-item"><span class="sched-text">${t}</span><button class="del-btn" onclick="delSched(${i})">✕</button></div>`
+  ).join('');
+}
+function addSched() {
+  const el = document.getElementById('sched-input');
+  const v  = el.value.trim(); if (!v) return;
+  const a  = $get(`liz_sched_${today()}`, []); a.push(v); $set(`liz_sched_${today()}`, a);
+  el.value = ''; renderSched();
+}
+function delSched(i) {
+  const a = $get(`liz_sched_${today()}`, []); a.splice(i,1); $set(`liz_sched_${today()}`, a); renderSched();
+}
+
+// Gratitude
+function renderGrat() {
+  const d = $get(`liz_grat_${today()}`, ['','','']);
+  [1,2,3].forEach(n => { document.getElementById(`grat-${n}`).value = d[n-1]||''; });
+}
+function saveGrat() {
+  $set(`liz_grat_${today()}`, [1,2,3].map(n => document.getElementById(`grat-${n}`).value));
+}
+
+// ══════════════════════════════════════════
+// ROUTINE MODAL
+// ══════════════════════════════════════════
+function openRoutineModal() {
+  DAY_KEYS.forEach(dk => { tempRoutines[dk] = [...getRoutine(dk)]; });
+  renderRoutineModal();
+  document.getElementById('routine-overlay').classList.add('open');
+}
+function overlayClose(e) {
+  if (e.target === document.getElementById('routine-overlay'))
+    document.getElementById('routine-overlay').classList.remove('open');
+}
+
+// Modal order: Mon–Sun
+const MODAL_DAY_ORDER = ['mon','tue','wed','thu','fri','sat','sun'];
+const MODAL_DAY_LABEL = { mon:'월요일', tue:'화요일', wed:'수요일', thu:'목요일', fri:'금요일', sat:'토요일', sun:'일요일' };
+
+function renderRoutineModal() {
+  const body = document.getElementById('routine-modal-body');
+  body.innerHTML = '';
+  MODAL_DAY_ORDER.forEach(dk => {
+    const sec = document.createElement('div');
+    sec.className = 'modal-day-section';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'modal-day-label';
+    lbl.textContent = MODAL_DAY_LABEL[dk];
+    sec.appendChild(lbl);
+
+    const itemsWrap = document.createElement('div');
+    itemsWrap.id = `mri-${dk}`;
+    tempRoutines[dk].forEach((v,i) => itemsWrap.appendChild(makeModalRow(dk,i,v)));
+    sec.appendChild(itemsWrap);
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'modal-add-btn';
+    addBtn.textContent = '+ 항목 추가';
+    addBtn.onclick = () => {
+      tempRoutines[dk].push('');
+      const w = document.getElementById(`mri-${dk}`);
+      w.appendChild(makeModalRow(dk, tempRoutines[dk].length-1, ''));
+      w.lastChild.querySelector('input').focus();
+    };
+    sec.appendChild(addBtn);
+    body.appendChild(sec);
+  });
+}
+
+function makeModalRow(dk, i, v) {
+  const row = document.createElement('div');
+  row.className = 'modal-item-row';
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.value = v; inp.placeholder = '루틴 항목...';
+  inp.oninput = () => { tempRoutines[dk][i] = inp.value; };
+  const del = document.createElement('button');
+  del.className = 'del-btn'; del.textContent = '🗑️';
+  del.onclick = () => { tempRoutines[dk].splice(i,1); renderRoutineModal(); };
+  row.appendChild(inp); row.appendChild(del);
+  return row;
+}
+
+function saveRoutines() {
+  DAY_KEYS.forEach(dk => {
+    $set(`liz_rt_${dk}`, tempRoutines[dk].filter(v=>v.trim()!==''));
+  });
+  document.getElementById('routine-overlay').classList.remove('open');
+  renderRoutine();
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function init() {
+  loadWeights();
+  renderCal();
+  renderDateLabel();
+  renderDiet();
+}
+init();
+</script>
+</body>
+</html>
